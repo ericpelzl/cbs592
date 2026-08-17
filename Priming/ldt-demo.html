@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lexical Decision Experiment</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-card: #1a2236;
+    --bg-card-hover: #1f2a42;
+    --text-primary: #e8ecf4;
+    --text-secondary: #8892a8;
+    --text-muted: #4d5770;
+    --accent: #60a5fa;
+    --accent-glow: rgba(96, 165, 250, 0.15);
+    --correct: #34d399;
+    --correct-glow: rgba(52, 211, 153, 0.15);
+    --incorrect: #f87171;
+    --incorrect-glow: rgba(248, 113, 113, 0.15);
+    --border: rgba(255, 255, 255, 0.06);
+    --condition-a: #a78bfa;
+    --condition-b: #fbbf24;
+    --condition-nw: #f472b6;
+  }
+
+  html.dark {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(96, 165, 250, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 100%, rgba(167, 139, 250, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 10% 80%, rgba(244, 114, 182, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 700px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  /* ── Welcome Screen ── */
+  .screen { display: none; width: 100%; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  .title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .instructions {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    width: 100%;
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  .instructions h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .instructions p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .instructions p:last-child { margin-bottom: 0; }
+
+  .key-badge {
+    display: inline-block;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    vertical-align: middle;
+  }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 40px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: #fff;
+    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 32px rgba(99, 102, 241, 0.4);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── Trial Screen ── */
+  .trial-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 60vh;
+    position: relative;
+  }
+
+  .trial-counter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .progress-bar-container {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--bg-card);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #818cf8);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .fixation {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 3.5rem;
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .stimulus-word {
+    font-family: 'Crimson Pro', serif;
+    font-size: 3rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    user-select: none;
+    text-align: center;
+  }
+
+  .stimulus-prime {
+    color: var(--text-secondary);
+  }
+
+  .stimulus-target {
+    color: var(--text-primary);
+    text-shadow: 0 0 40px var(--accent-glow);
+  }
+
+  .prompt-keys {
+    display: flex;
+    gap: 48px;
+    margin-top: 48px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .prompt-keys.visible { opacity: 1; }
+
+  .prompt-key {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .prompt-key kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--accent);
+    transition: all 0.15s ease;
+  }
+
+  .prompt-key span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Feedback ── */
+  .feedback-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .feedback-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .feedback-overlay.correct { background: var(--correct-glow); }
+  .feedback-overlay.incorrect { background: var(--incorrect-glow); }
+
+  .feedback-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  .feedback-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .feedback-label.correct-text { color: var(--correct); }
+  .feedback-label.incorrect-text { color: var(--incorrect); }
+
+  .feedback-rt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+  }
+
+  /* ── Results ── */
+  .results-container {
+    width: 100%;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .results-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .results-header h1 {
+    font-family: 'Crimson Pro', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .results-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .stat-card.cond-a::before { background: var(--condition-a); }
+  .stat-card.cond-b::before { background: var(--condition-b); }
+  .stat-card.cond-nw::before { background: var(--condition-nw); }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .stat-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+
+  .stat-card.cond-a .stat-value { color: var(--condition-a); }
+  .stat-card.cond-b .stat-value { color: var(--condition-b); }
+  .stat-card.cond-nw .stat-value { color: var(--condition-nw); }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    margin-top: 8px;
+  }
+
+  .detail-table {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .detail-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .detail-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-table td {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    padding: 11px 16px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-table tr:last-child td { border-bottom: none; }
+
+  .detail-table .cond-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .cond-badge-a { background: rgba(167,139,250,0.15); color: var(--condition-a); }
+  .cond-badge-b { background: rgba(251,191,36,0.15); color: var(--condition-b); }
+  .cond-badge-nw { background: rgba(244,114,182,0.15); color: var(--condition-nw); }
+
+  .correct-cell { color: var(--correct); }
+  .incorrect-cell { color: var(--incorrect); }
+
+  .results-scroll {
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-bottom: 40px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn-restart {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .btn-restart:hover {
+    background: var(--bg-card-hover);
+  }
+
+  .btn-download {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+  }
+
+  .btn-download:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(16, 185, 129, 0.35);
+  }
+
+  .btn-download:active { transform: translateY(0); }
+
+  .results-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  /* ── Touch-friendly buttons for mobile ── */
+  .touch-buttons {
+    display: none;
+    gap: 16px;
+    margin-top: 32px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .touch-btn {
+    flex: 1;
+    padding: 18px 12px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .touch-btn:active {
+    transform: scale(0.96);
+  }
+
+  .touch-btn-word {
+    border-color: rgba(96, 165, 250, 0.3);
+  }
+
+  .touch-btn-nonword {
+    border-color: rgba(244, 114, 182, 0.3);
+  }
+
+  @media (pointer: coarse) {
+    .touch-buttons { display: flex; }
+  }
+
+  @media (max-width: 520px) {
+    .title { font-size: 1.8rem; }
+    .instructions { padding: 20px; }
+    .stimulus-word { font-size: 2.2rem; }
+    .fixation { font-size: 2.8rem; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-card { padding: 16px; }
+    .prompt-keys { gap: 28px; }
+    #app { padding: 16px; }
+    .touch-buttons { display: flex; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Welcome Screen -->
+  <div id="welcome-screen" class="screen active">
+    <h1 class="title">Lexical Decision Task</h1>
+    <p class="subtitle">A priming paradigm demo for psycholinguistics</p>
+    <div class="instructions">
+      <h3>How it works</h3>
+      <p>On each trial you will see:</p>
+      <p style="padding-left:12px; border-left:2px solid var(--border); margin: 8px 0 16px;">
+        <strong>Fixation cross</strong> → <strong>Prime word</strong> → <strong>Target string</strong>
+      </p>
+      <p>Your task is to decide as quickly and accurately as possible whether the <strong>target</strong> is a <em>real English word</em> or a <em>nonword</em>.</p>
+      <p style="margin-top:16px;">
+        Press <span class="key-badge">F</span> for <strong>Real Word</strong> &nbsp;·&nbsp;
+        Press <span class="key-badge">J</span> for <strong>Nonword</strong>
+      </p>
+      <p style="margin-top:8px; font-size:0.82rem; color: var(--text-muted);">On touchscreens, tap the on-screen buttons instead.</p>
+      <p style="margin-top:16px;">There are <strong>56 trials</strong>. A brief feedback will appear after each response.</p>
+    </div>
+    <button class="btn btn-primary" id="start-btn">Begin Experiment</button>
+  </div>
+
+  <!-- Trial Screen -->
+  <div id="trial-screen" class="screen">
+    <div class="trial-area" id="trial-area">
+      <span class="trial-counter" id="trial-counter"></span>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div id="stimulus-display"></div>
+      <div class="prompt-keys" id="prompt-keys">
+        <div class="prompt-key">
+          <kbd>F</kbd>
+          <span>Word</span>
+        </div>
+        <div class="prompt-key">
+          <kbd>J</kbd>
+          <span>Nonword</span>
+        </div>
+      </div>
+      <div class="touch-buttons" id="touch-buttons">
+        <button class="touch-btn touch-btn-word" id="btn-word">Real Word</button>
+        <button class="touch-btn touch-btn-nonword" id="btn-nonword">Nonword</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div id="results-screen" class="screen">
+    <div class="results-container">
+      <div class="results-scroll" id="results-scroll"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Overlay -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-icon" id="feedback-icon"></div>
+  <div class="feedback-label" id="feedback-label"></div>
+  <div class="feedback-rt" id="feedback-rt"></div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  // ── Dark mode detection ──
+  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    document.documentElement.classList.add("dark");
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(event) {
+    if (event.matches) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  });
+
+  // ── Stimulus data (from English1.xlsx) ──
+  var TRIALS_DATA = [
+    {prime:"naughty",target:"mischief",condition:"A"},
+    {prime:"prejudice",target:"discrimination",condition:"A"},
+    {prime:"math",target:"equation",condition:"A"},
+    {prime:"cheap",target:"price",condition:"A"},
+    {prime:"spoiled",target:"pampered",condition:"A"},
+    {prime:"countryside",target:"county seat",condition:"A"},
+    {prime:"butterfly",target:"bee",condition:"A"},
+    {prime:"explanation",target:"furniture",condition:"A"},
+    {prime:"prejudice",target:"hero",condition:"A"},
+    {prime:"math",target:"guard",condition:"A"},
+    {prime:"interest",target:"operate",condition:"A"},
+    {prime:"spoil",target:"tale",condition:"A"},
+    {prime:"countryside",target:"vision",condition:"A"},
+    {prime:"butterfly",target:"author",condition:"A"},
+    {prime:"curse",target:"vo",condition:"nonword"},
+    {prime:"towel",target:"gelogote",condition:"nonword"},
+    {prime:"consciousness",target:"sugby",condition:"nonword"},
+    {prime:"court",target:"kears",condition:"nonword"},
+    {prime:"still",target:"tonsamer",condition:"nonword"},
+    {prime:"method",target:"beduted",condition:"nonword"},
+    {prime:"realize",target:"oss",condition:"nonword"},
+    {prime:"benefit",target:"ummifent",condition:"nonword"},
+    {prime:"music",target:"dapours",condition:"nonword"},
+    {prime:"border",target:"ipent",condition:"nonword"},
+    {prime:"pack",target:"opersime",condition:"nonword"},
+    {prime:"recognize",target:"lim",condition:"nonword"},
+    {prime:"depart",target:"gined",condition:"nonword"},
+    {prime:"market",target:"pagets",condition:"nonword"},
+    {prime:"languish",target:"wither",condition:"B"},
+    {prime:"result",target:"reason",condition:"B"},
+    {prime:"nutrition",target:"health",condition:"B"},
+    {prime:"injured",target:"stretcher",condition:"B"},
+    {prime:"thinking",target:"memory",condition:"B"},
+    {prime:"masses",target:"leader",condition:"B"},
+    {prime:"feature",target:"characteristic",condition:"B"},
+    {prime:"languish",target:"ally",condition:"B"},
+    {prime:"injured",target:"machine",condition:"B"},
+    {prime:"nutrition",target:"plug",condition:"B"},
+    {prime:"strong",target:"rights",condition:"B"},
+    {prime:"thought",target:"hospital",condition:"B"},
+    {prime:"affair",target:"clean",condition:"B"},
+    {prime:"rider",target:"mail",condition:"B"},
+    {prime:"chamber",target:"limtressive",condition:"nonword"},
+    {prime:"register",target:"fiss",condition:"nonword"},
+    {prime:"volunteer",target:"dexgrisly",condition:"nonword"},
+    {prime:"ruins",target:"hegreef",condition:"nonword"},
+    {prime:"encourage",target:"pownzie",condition:"nonword"},
+    {prime:"fight",target:"cressfass",condition:"nonword"},
+    {prime:"attend",target:"ageef",condition:"nonword"},
+    {prime:"comb",target:"noosies",condition:"nonword"},
+    {prime:"tell",target:"dauf",condition:"nonword"},
+    {prime:"alcohol",target:"iveck",condition:"nonword"},
+    {prime:"telecommunications",target:"sliss",condition:"nonword"},
+    {prime:"sweater",target:"kell",condition:"nonword"},
+    {prime:"relieve",target:"gittick",condition:"nonword"},
+    {prime:"physiology",target:"scriping",condition:"nonword"}
+  ];
+
+  // ── Experiment state ──
+  var trials = [];
+  var currentTrialIndex = 0;
+  var results = [];
+  var targetOnsetTime = 0;
+  var awaitingResponse = false;
+
+  // ── Timing constants (ms) ──
+  var FIXATION_DURATION = 500;
+  var PRIME_DURATION = 250;
+  var ISI_DURATION = 100; // inter-stimulus interval (blank)
+  var FEEDBACK_DURATION = 1200;
+
+  // ── DOM refs ──
+  var welcomeScreen = document.getElementById("welcome-screen");
+  var trialScreen = document.getElementById("trial-screen");
+  var resultsScreen = document.getElementById("results-screen");
+  var startBtn = document.getElementById("start-btn");
+  var trialCounter = document.getElementById("trial-counter");
+  var progressFill = document.getElementById("progress-fill");
+  var stimDisplay = document.getElementById("stimulus-display");
+  var promptKeys = document.getElementById("prompt-keys");
+  var touchButtons = document.getElementById("touch-buttons");
+  var btnWord = document.getElementById("btn-word");
+  var btnNonword = document.getElementById("btn-nonword");
+  var feedbackOverlay = document.getElementById("feedback-overlay");
+  var feedbackIcon = document.getElementById("feedback-icon");
+  var feedbackLabel = document.getElementById("feedback-label");
+  var feedbackRt = document.getElementById("feedback-rt");
+  var resultsScroll = document.getElementById("results-scroll");
+
+  // ── Fisher-Yates shuffle (unconstrained) ──
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i];
+      a[i] = a[j];
+      a[j] = tmp;
+    }
+    return a;
+  }
+
+  // ── Constrained randomization ──
+  // Rule 1: No more than 4 words (A|B) or nonwords in a row
+  // Rule 2: No more than 3 condition-A or condition-B trials in a row
+  function passesConstraints(seq) {
+    for (var i = 0; i < seq.length; i++) {
+      // Rule 1 — check runs of word / nonword (look back 4)
+      if (i >= 4) {
+        var lexType = seq[i].condition === "nonword" ? "nw" : "w";
+        var allSame = true;
+        for (var k = 1; k <= 4; k++) {
+          var prev = seq[i - k].condition === "nonword" ? "nw" : "w";
+          if (prev !== lexType) { allSame = false; break; }
+        }
+        if (allSame) return false;
+      }
+      // Rule 2 — check runs of A or B (look back 3)
+      if (i >= 3 && seq[i].condition !== "nonword") {
+        var cond = seq[i].condition;
+        var run = true;
+        for (var m = 1; m <= 3; m++) {
+          if (seq[i - m].condition !== cond) { run = false; break; }
+        }
+        if (run) return false;
+      }
+    }
+    return true;
+  }
+
+  function constrainedShuffle(arr) {
+    // Try rejection sampling first (fast for this distribution)
+    for (var attempt = 0; attempt < 2000; attempt++) {
+      var candidate = shuffle(arr);
+      if (passesConstraints(candidate)) return candidate;
+    }
+    // Fallback: build sequence greedily with constrained insertion
+    return greedyShuffle(arr);
+  }
+
+  function greedyShuffle(arr) {
+    var pool = shuffle(arr);
+    var seq = [];
+    var remaining = pool.slice();
+
+    while (remaining.length > 0) {
+      var placed = false;
+      // Shuffle remaining to keep randomness in selection
+      remaining = shuffle(remaining);
+      for (var i = 0; i < remaining.length; i++) {
+        seq.push(remaining[i]);
+        if (passesConstraints(seq)) {
+          remaining.splice(i, 1);
+          placed = true;
+          break;
+        }
+        seq.pop();
+      }
+      if (!placed) {
+        // Deadlock — restart with a fresh shuffle
+        pool = shuffle(arr);
+        seq = [];
+        remaining = pool.slice();
+      }
+    }
+    return seq;
+  }
+
+  // ── Switch screens ──
+  function showScreen(screen) {
+    welcomeScreen.classList.remove("active");
+    trialScreen.classList.remove("active");
+    resultsScreen.classList.remove("active");
+    screen.classList.add("active");
+  }
+
+  // ── Start experiment ──
+  function startExperiment() {
+    trials = constrainedShuffle(TRIALS_DATA);
+    currentTrialIndex = 0;
+    results = [];
+    showScreen(trialScreen);
+    runTrial();
+  }
+
+  // ── Run a single trial ──
+  function runTrial() {
+    var trial = trials[currentTrialIndex];
+    trialCounter.textContent = "Trial " + (currentTrialIndex + 1) + " / " + trials.length;
+    progressFill.style.width = ((currentTrialIndex / trials.length) * 100) + "%";
+    promptKeys.classList.remove("visible");
+    touchButtons.style.pointerEvents = "none";
+    awaitingResponse = false;
+
+    // Phase 1: Fixation
+    stimDisplay.innerHTML = '<span class="fixation">+</span>';
+    setTimeout(function() {
+      // Phase 2: Prime
+      stimDisplay.innerHTML = '<span class="stimulus-word stimulus-prime">' + escapeHtml(trial.prime) + '</span>';
+      setTimeout(function() {
+        // Phase 3: ISI (blank)
+        stimDisplay.innerHTML = "";
+        setTimeout(function() {
+          // Phase 4: Target — start timer
+          stimDisplay.innerHTML = '<span class="stimulus-word stimulus-target">' + escapeHtml(trial.target) + '</span>';
+          targetOnsetTime = performance.now();
+          awaitingResponse = true;
+          promptKeys.classList.add("visible");
+          touchButtons.style.pointerEvents = "auto";
+        }, ISI_DURATION);
+      }, PRIME_DURATION);
+    }, FIXATION_DURATION);
+  }
+
+  // ── Handle response ──
+  function handleResponse(responseIsWord) {
+    if (!awaitingResponse) return;
+    awaitingResponse = false;
+
+    var rt = Math.round(performance.now() - targetOnsetTime);
+    var trial = trials[currentTrialIndex];
+    var correctAnswer = trial.condition !== "nonword";
+    var isCorrect = responseIsWord === correctAnswer;
+
+    results.push({
+      trialNum: currentTrialIndex + 1,
+      prime: trial.prime,
+      target: trial.target,
+      condition: trial.condition,
+      response: responseIsWord ? "word" : "nonword",
+      correct: isCorrect,
+      rt: rt
+    });
+
+    showFeedback(isCorrect, rt);
+  }
+
+  // ── Show feedback ──
+  function showFeedback(isCorrect, rt) {
+    promptKeys.classList.remove("visible");
+    touchButtons.style.pointerEvents = "none";
+
+    feedbackOverlay.className = "feedback-overlay show " + (isCorrect ? "correct" : "incorrect");
+    feedbackIcon.textContent = isCorrect ? "✓" : "✗";
+    feedbackLabel.className = "feedback-label " + (isCorrect ? "correct-text" : "incorrect-text");
+    feedbackLabel.textContent = isCorrect ? "Correct" : "Incorrect";
+    feedbackRt.textContent = rt + " ms";
+
+    setTimeout(function() {
+      feedbackOverlay.className = "feedback-overlay";
+      currentTrialIndex++;
+      if (currentTrialIndex < trials.length) {
+        runTrial();
+      } else {
+        progressFill.style.width = "100%";
+        showResults();
+      }
+    }, FEEDBACK_DURATION);
+  }
+
+  // ── Compute & display results ──
+  function showResults() {
+    var conditionNames = { A: "Condition A", B: "Condition B", nonword: "Nonwords" };
+    var groups = { A: [], B: [], nonword: [] };
+
+    results.forEach(function(r) {
+      groups[r.condition].push(r);
+    });
+
+    function avg(arr) {
+      if (arr.length === 0) return 0;
+      var sum = 0;
+      arr.forEach(function(v) { sum += v; });
+      return sum / arr.length;
+    }
+
+    function computeStats(group) {
+      var correctTrials = group.filter(function(r) { return r.correct; });
+      var accuracy = group.length > 0 ? (correctTrials.length / group.length * 100) : 0;
+      var meanRt = avg(correctTrials.map(function(r) { return r.rt; }));
+      return { accuracy: accuracy, meanRt: meanRt, total: group.length, numCorrect: correctTrials.length };
+    }
+
+    var statsA = computeStats(groups.A);
+    var statsB = computeStats(groups.B);
+    var statsNW = computeStats(groups.nonword);
+
+    var html = '';
+    html += '<div class="results-header">';
+    html += '<h1>Experiment Complete</h1>';
+    html += '<p>Here are your results across all ' + results.length + ' trials</p>';
+    html += '</div>';
+
+    // ── Summary cards: Mean RT ──
+    html += '<div class="section-title">Mean Response Time (correct trials only)</div>';
+    html += '<div class="stats-grid">';
+    html += buildStatCard("Condition A", statsA.meanRt.toFixed(0), "ms", "cond-a");
+    html += buildStatCard("Condition B", statsB.meanRt.toFixed(0), "ms", "cond-b");
+    html += buildStatCard("Nonwords", statsNW.meanRt.toFixed(0), "ms", "cond-nw");
+    html += '</div>';
+
+    // ── Summary cards: Accuracy ──
+    html += '<div class="section-title">Accuracy</div>';
+    html += '<div class="stats-grid">';
+    html += buildStatCard("Condition A", statsA.accuracy.toFixed(1), "% (" + statsA.numCorrect + "/" + statsA.total + ")", "cond-a");
+    html += buildStatCard("Condition B", statsB.accuracy.toFixed(1), "% (" + statsB.numCorrect + "/" + statsB.total + ")", "cond-b");
+    html += buildStatCard("Nonwords", statsNW.accuracy.toFixed(1), "% (" + statsNW.numCorrect + "/" + statsNW.total + ")", "cond-nw");
+    html += '</div>';
+
+    // ── Trial-by-trial table ──
+    html += '<div class="section-title">Trial-by-trial breakdown</div>';
+    html += '<div class="detail-table"><table>';
+    html += '<tr><th>#</th><th>Prime</th><th>Target</th><th>Cond</th><th>RT</th><th>Result</th></tr>';
+    results.forEach(function(r) {
+      var badgeClass = r.condition === "A" ? "cond-badge-a" : r.condition === "B" ? "cond-badge-b" : "cond-badge-nw";
+      var condLabel = r.condition === "nonword" ? "NW" : r.condition;
+      var correctClass = r.correct ? "correct-cell" : "incorrect-cell";
+      html += '<tr>';
+      html += '<td>' + r.trialNum + '</td>';
+      html += '<td>' + escapeHtml(r.prime) + '</td>';
+      html += '<td>' + escapeHtml(r.target) + '</td>';
+      html += '<td><span class="cond-badge ' + badgeClass + '">' + condLabel + '</span></td>';
+      html += '<td>' + r.rt + ' ms</td>';
+      html += '<td class="' + correctClass + '">' + (r.correct ? "✓" : "✗") + '</td>';
+      html += '</tr>';
+    });
+    html += '</table></div>';
+
+    // ── Action buttons ──
+    html += '<div class="results-actions">';
+    html += '<button class="btn btn-download" id="download-btn">↓ Download CSV</button>';
+    html += '<button class="btn btn-restart" id="restart-btn">Run Again</button>';
+    html += '</div>';
+
+    resultsScroll.innerHTML = html;
+    showScreen(resultsScreen);
+
+    document.getElementById("download-btn").addEventListener("click", function() {
+      downloadCSV();
+    });
+    document.getElementById("restart-btn").addEventListener("click", function() {
+      startExperiment();
+    });
+  }
+
+  // ── CSV generation & download ──
+  function downloadCSV() {
+    var header = "trial,prime,target,condition,response,correct,rt_ms";
+    var rows = [header];
+    results.forEach(function(r) {
+      rows.push([
+        r.trialNum,
+        csvEscape(r.prime),
+        csvEscape(r.target),
+        r.condition,
+        r.response,
+        r.correct ? "1" : "0",
+        r.rt
+      ].join(","));
+    });
+    var csvContent = rows.join("\n");
+    var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "lexical_decision_results.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function csvEscape(str) {
+    if (str.indexOf(",") !== -1 || str.indexOf('"') !== -1 || str.indexOf("\n") !== -1) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  }
+
+  function buildStatCard(label, value, unit, cls) {
+    return '<div class="stat-card ' + cls + '">' +
+      '<div class="stat-label">' + label + '</div>' +
+      '<div class="stat-value">' + value + '</div>' +
+      '<div class="stat-unit">' + unit + '</div>' +
+      '</div>';
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // ── Keyboard listener ──
+  document.addEventListener("keydown", function(e) {
+    if (!awaitingResponse) return;
+    var key = e.key.toLowerCase();
+    if (key === "f") {
+      handleResponse(true);
+    } else if (key === "j") {
+      handleResponse(false);
+    }
+  });
+
+  // ── Touch button listeners ──
+  btnWord.addEventListener("click", function() { handleResponse(true); });
+  btnNonword.addEventListener("click", function() { handleResponse(false); });
+
+  // ── Start button ──
+  startBtn.addEventListener("click", startExperiment);
+})();
+</script>
+</body>
+</html>
