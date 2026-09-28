@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Study</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;700&family=Work+Sans:wght@300;400;500;600&family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary:#FAF6F0;--bg-secondary:#F0EBE3;--bg-card:#FFFFFF;
+            --text-primary:#2D2B28;--text-secondary:#6B6560;--text-muted:#9A948D;
+            --accent:#1B6B4A;--accent-light:#E8F5EE;--accent-hover:#15543A;
+            --secondary:#C9850A;--secondary-light:#FFF5E0;
+            --border:#E3DDD5;--shadow:rgba(45,43,40,0.08);--shadow-lg:rgba(45,43,40,0.14);
+            --correct-bg:#E8F5EE;--correct-fg:#1B6B4A;--correct-border:#2ECC71;
+            --wrong-bg:#FDEDEC;--wrong-fg:#C0392B;--wrong-border:#E74C3C;
+            --cw-bg:#E8F5EE;--filler-muted:#B0ABA4;
+        }
+        html.dark {
+            --bg-primary:#0E1525;--bg-secondary:#162033;--bg-card:#1A2744;
+            --text-primary:#EDE8E0;--text-secondary:#A09B94;--text-muted:#6B6560;
+            --accent:#3DDC97;--accent-light:#15292A;--accent-hover:#2FC583;
+            --secondary:#F0B429;--secondary-light:#1F2A3E;
+            --border:#2A3A55;--shadow:rgba(0,0,0,0.2);--shadow-lg:rgba(0,0,0,0.35);
+            --correct-bg:#15292A;--correct-fg:#3DDC97;--correct-border:#3DDC97;
+            --wrong-bg:#2A1520;--wrong-fg:#FF6B6B;--wrong-border:#FF6B6B;
+            --cw-bg:#15292A;--filler-muted:#6B6560;
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Work Sans',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;display:flex;justify-content:center;padding:1.5rem 1rem;transition:background .3s,color .3s;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+        #app{width:100%;max-width:720px;margin:auto}
+        .screen{display:none;width:100%;animation:screenIn .45s ease}
+        .screen.active{display:flex;flex-direction:column}
+        @keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:2.5rem 2rem;box-shadow:0 4px 28px var(--shadow)}
+        .card h1,.card h2{font-family:'Bitter',serif;color:var(--accent)}
+        .card h1{font-size:1.75rem;font-weight:700;margin-bottom:.35rem}
+        .card h2{font-size:1.45rem;font-weight:700;margin-bottom:.35rem}
+        .card .subtitle{font-size:1rem;color:var(--text-secondary);margin-bottom:1.6rem;line-height:1.55}
+        .card ol{padding-left:1.5rem;margin-bottom:1.5rem}
+        .card li{margin-bottom:.65rem;line-height:1.65;font-size:1rem;color:var(--text-primary)}
+        .note-box{background:var(--accent-light);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.95rem;line-height:1.55;color:var(--text-secondary)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;padding:.85rem 2.2rem;border-radius:10px;font-family:'Work Sans',sans-serif;font-size:1rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;touch-action:manipulation}
+        .btn-primary{background:var(--accent);color:#fff}
+        .btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 4px 14px var(--shadow-lg)}
+        .btn-secondary{background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border)}
+        .btn-secondary:hover{background:var(--border)}
+        .btn-row{display:flex;justify-content:center;margin-top:1.2rem;gap:.75rem}
+
+        .trial-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:78vh;width:100%;padding:1rem 0}
+        .progress{width:100%;max-width:360px;margin-bottom:2.2rem;text-align:center}
+        .progress-label{font-size:.85rem;color:var(--text-muted);font-weight:500;margin-bottom:.45rem}
+        .progress-track{width:100%;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+        .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .35s ease}
+        .fixation{font-family:'Source Code Pro',monospace;font-size:2.6rem;font-weight:600;color:var(--accent);line-height:1}
+
+        .word-box{font-family:'Source Code Pro',monospace;font-size:1.15rem;line-height:2.2;width:100%;text-align:center;padding:1.5rem 1.2rem;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:0 2px 14px var(--shadow);white-space:nowrap;overflow:hidden}
+        .w{display:inline;letter-spacing:.015em}
+        .w-dash{color:var(--text-muted);opacity:.4}
+        .w-show{color:var(--text-primary);font-weight:500}
+        .trial-hint{margin-top:2rem;font-size:.88rem;color:var(--text-muted);text-align:center;animation:pulse 2.2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+        .q-card{width:100%;max-width:520px;animation:fadeUp .35s ease}
+        .q-label{font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600;margin-bottom:.6rem}
+        .q-text{font-family:'Bitter',serif;font-size:1.1rem;font-weight:500;margin-bottom:1.2rem;color:var(--text-primary);line-height:1.55}
+        .opt-btn{display:block;width:100%;padding:.85rem 1.25rem;margin-bottom:.55rem;border:2px solid var(--border);border-radius:10px;background:var(--bg-secondary);color:var(--text-primary);font-family:'Work Sans',sans-serif;font-size:1rem;font-weight:500;text-align:left;cursor:pointer;transition:all .15s;touch-action:manipulation}
+        .opt-btn:hover{border-color:var(--accent);background:var(--accent-light)}
+        .opt-btn.chosen-correct{border-color:var(--correct-border);background:var(--correct-bg);color:var(--correct-fg);font-weight:600}
+        .opt-btn.chosen-wrong{border-color:var(--wrong-border);background:var(--wrong-bg);color:var(--wrong-fg);font-weight:600}
+        .opt-btn.reveal-correct{border-color:var(--correct-border);background:var(--correct-bg);color:var(--correct-fg)}
+        .opt-btn.disabled{pointer-events:none;opacity:.6}
+        .feedback-msg{margin-top:.9rem;font-size:1rem;font-weight:600;animation:fadeUp .25s ease}
+        .feedback-msg.correct{color:var(--correct-fg)}
+        .feedback-msg.incorrect{color:var(--wrong-fg)}
+        .q-hint{margin-top:1rem;font-size:.8rem;color:var(--text-muted)}
+
+        .card.centered{text-align:center}
+        .card.centered p{color:var(--text-secondary);line-height:1.65;margin-bottom:1.2rem;font-size:1rem}
+
+        .results-sub{color:var(--text-secondary);margin-bottom:1.8rem;font-size:1rem;line-height:1.5}
+        .chart-label-text{font-size:.92rem;color:var(--text-secondary);margin-bottom:.6rem}
+        .chart{margin:.5rem 0 1.5rem}
+        .chart-row{display:flex;align-items:center;margin-bottom:.85rem}
+        .chart-name{width:110px;font-weight:600;font-size:.95rem;flex-shrink:0}
+        .chart-track{flex:1;height:42px;background:var(--bg-secondary);border-radius:8px;overflow:hidden}
+        .chart-fill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:14px;font-weight:600;font-size:.9rem;color:#fff;transition:width .9s cubic-bezier(.22,1,.36,1);min-width:80px}
+        .fill-a{background:var(--accent)} .fill-b{background:var(--secondary)}
+        .accuracy-line{margin-top:.5rem;font-size:.95rem;color:var(--text-secondary);font-weight:500}
+        .results-note{font-size:.88rem;color:var(--text-muted);margin-top:.4rem;line-height:1.55}
+
+        .table-section{margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+        .table-heading{font-family:'Bitter',serif;font-size:1.1rem;font-weight:600;color:var(--accent);margin-bottom:.25rem}
+        .table-note{font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem}
+        .table-wrap{max-height:50vh;overflow:auto;border:1px solid var(--border);border-radius:8px;-webkit-overflow-scrolling:touch}
+        .dt{width:100%;border-collapse:collapse;font-size:.82rem}
+        .dt thead{position:sticky;top:0;z-index:2}
+        .dt th{padding:.55rem .6rem;text-align:left;font-weight:600;background:var(--bg-secondary);border-bottom:2px solid var(--border);color:var(--text-primary);white-space:nowrap}
+        .dt td{padding:.32rem .6rem;border-bottom:1px solid var(--border);color:var(--text-primary);white-space:nowrap}
+        .dt .rt-col{font-family:'Source Code Pro',monospace;text-align:right}
+        .dt .roi-col{font-family:'Source Code Pro',monospace;text-align:center;font-weight:500}
+        .dt tr.cw-row td{background:var(--cw-bg);font-weight:600}
+        .dt tr.item-alt td{background:var(--bg-secondary)}
+        .dt tr.cw-row.item-alt td{background:var(--cw-bg)}
+        .dt .filler-cond{color:var(--filler-muted);font-style:italic}
+
+        .dl-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);text-align:center}
+        .dl-section p{font-size:.92rem;color:var(--text-secondary);margin-bottom:1rem}
+
+        @media(max-width:600px){
+            .card{padding:1.8rem 1.15rem}.card h1{font-size:1.45rem}.card h2{font-size:1.25rem}
+            .word-box{font-size:1rem;padding:1.1rem .8rem;line-height:2.1}
+            .fixation{font-size:2.2rem}
+            .chart-name{width:90px;font-size:.88rem}
+            .q-card{max-width:100%}
+            .dt{font-size:.75rem}.dt th,.dt td{padding:.3rem .4rem}
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- 1. INSTRUCTIONS -->
+    <div id="scr-instr" class="screen active">
+        <div class="card">
+            <h1>Reading Study</h1>
+            <p class="subtitle">Thank you for joining! In this study you will read sentences one word at a time.</p>
+            <p style="margin-bottom:1rem;line-height:1.6;font-size:1rem">Here is what to do:</p>
+            <ol>
+                <li>A <strong>+</strong> sign will appear on the screen. This means a new sentence is coming.</li>
+                <li>You will then see the sentence with all words hidden behind dashes (<span style="font-family:'Source Code Pro',monospace;color:var(--text-muted)">&#8211;&#8211;&#8211;&#8211;</span>).</li>
+                <li>Press the <strong>SPACE BAR</strong> to see the first word. On a phone, <strong>tap the screen</strong> instead.</li>
+                <li>Each time you press SPACE (or tap), the next word will appear and the previous word will be hidden again.</li>
+                <li>Keep going until you reach the end of the sentence.</li>
+                <li>After each sentence you will answer a <strong>short question</strong> about what you just read.</li>
+                <li>Please read at a <strong>comfortable, normal speed</strong>.</li>
+            </ol>
+            <div class="note-box">
+                We will start with <strong>2 practice sentences</strong> so you can try it out. After that, the real study begins with <strong>20 sentences</strong>.
+            </div>
+            <div class="btn-row"><button class="btn btn-primary" id="btn-start-practice">Start Practice</button></div>
+        </div>
+    </div>
+
+    <!-- 2. TRIAL -->
+    <div id="scr-trial" class="screen">
+        <div class="trial-wrap">
+            <div class="progress">
+                <div class="progress-label" id="prog-label"></div>
+                <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+            </div>
+            <div id="trial-area" style="display:flex;flex-direction:column;align-items:center;width:100%"></div>
+            <div class="trial-hint" id="trial-hint">Press SPACE or tap to continue</div>
+        </div>
+    </div>
+
+    <!-- 3. PRACTICE COMPLETE -->
+    <div id="scr-ready" class="screen">
+        <div class="card centered">
+            <h2>Practice Complete!</h2>
+            <p>Great job! The real study has 20 sentences, each followed by a question. Just read at your normal speed.</p>
+            <div class="btn-row"><button class="btn btn-primary" id="btn-start-exp">Start the Study</button></div>
+        </div>
+    </div>
+
+    <!-- 4. RESULTS -->
+    <div id="scr-results" class="screen">
+        <div class="card">
+            <h2>All Done!</h2>
+            <p class="results-sub">Thank you for completing the study. Here are your results:</p>
+            <div class="chart" id="chart"></div>
+            <p class="accuracy-line" id="accuracy-line"></p>
+            <p class="results-note" id="results-note"></p>
+            <div class="table-section">
+                <div class="table-heading">Word-by-word reading times</div>
+                <div class="table-note">CW = key word (disambiguation point) &nbsp;|&nbsp; ROI = position relative to CW</div>
+                <div class="table-wrap" id="table-wrap"></div>
+            </div>
+            <div class="dl-section">
+                <p>Download all data as a spreadsheet:</p>
+                <button class="btn btn-secondary" id="btn-download">Download Data (.csv)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================================================================
+   DARK MODE
+   ================================================================ */
+(function(){
+    if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark');
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(e){document.documentElement.classList.toggle('dark',e.matches);});
+})();
+
+/* ================================================================
+   STIMULI
+   ================================================================ */
+
+/* --- 10 experimental items: full (with "that") vs reduced (without "that") ---
+   Full  = 15 words, disambiguation "was/would" at index 9
+   Reduced = 14 words, disambiguation "was/would" at index 8               */
+
+var DISAMBIG_FULL = 9;
+var DISAMBIG_REDUCED = 8;
+
+var experimentalItems = [
+    {id:1,
+     full:    "The teacher knew that the boy near the door was waiting for his older sister.",
+     reduced: "The teacher knew the boy near the door was waiting for his older sister.",
+     q:"Who was the boy waiting for?", opts:["His mother","His older sister","His friend"], ans:1},
+    {id:2,
+     full:    "The mother heard that the baby in the bedroom was crying for some warm milk.",
+     reduced: "The mother heard the baby in the bedroom was crying for some warm milk.",
+     q:"Where was the baby?", opts:["In the kitchen","In the bedroom","In the garden"], ans:1},
+    {id:3,
+     full:    "The driver noticed that the woman at the crossing was carrying a heavy shopping bag.",
+     reduced: "The driver noticed the woman at the crossing was carrying a heavy shopping bag.",
+     q:"Where was the woman?", opts:["At the bus stop","At the crossing","At the door"], ans:1},
+    {id:4,
+     full:    "The cook found that the bread on the counter was still warm in the middle.",
+     reduced: "The cook found the bread on the counter was still warm in the middle.",
+     q:"Where was the bread?", opts:["In the oven","On the counter","On the table"], ans:1},
+    {id:5,
+     full:    "The nurse remembered that the man with the glasses was unable to eat certain foods.",
+     reduced: "The nurse remembered the man with the glasses was unable to eat certain foods.",
+     q:"Who remembered something about the man?", opts:["The doctor","The nurse","The patient"], ans:1},
+    {id:6,
+     full:    "The girl believed that the story about the giant was true until her brother laughed.",
+     reduced: "The girl believed the story about the giant was true until her brother laughed.",
+     q:"Who laughed?", opts:["Her sister","Her brother","Her mother"], ans:1},
+    {id:7,
+     full:    "The guard suspected that the man near the gate was hiding something inside his coat.",
+     reduced: "The guard suspected the man near the gate was hiding something inside his coat.",
+     q:"Where was the man?", opts:["Near the wall","Near the gate","Near the car"], ans:1},
+    {id:8,
+     full:    "The farmer discovered that the hole in the fence was big enough for his dog.",
+     reduced: "The farmer discovered the hole in the fence was big enough for his dog.",
+     q:"Where was the hole?", opts:["In the wall","In the fence","In the roof"], ans:1},
+    {id:9,
+     full:    "The boy admitted that the mistake in the answer was caused by his poor spelling.",
+     reduced: "The boy admitted the mistake in the answer was caused by his poor spelling.",
+     q:"What caused the mistake?", opts:["Poor reading","Poor spelling","Poor handwriting"], ans:1},
+    {id:10,
+     full:    "The manager accepted that the plan for the trip would cost more than they hoped.",
+     reduced: "The manager accepted the plan for the trip would cost more than they hoped.",
+     q:"What was the plan for?", opts:["A meeting","A party","A trip"], ans:2}
+];
+
+/* --- 10 filler items (high-predictability sentences, 15 words each) --- */
+var fillerItems = [
+    {id:11, sentence:"At breakfast, Amy spread some butter on her warm bread before sitting at the table.",
+     q:"What did Amy spread?", opts:["Jam","Butter","Honey"], ans:1},
+    {id:12, sentence:"After washing her hands, Molly dried them with a towel before going back to class.",
+     q:"What did Molly do before drying her hands?", opts:["She washed them","She ate lunch","She painted"], ans:0},
+    {id:13, sentence:"To stay dry, Lucy covered her head with her umbrella while walking to the station.",
+     q:"Where was Lucy walking to?", opts:["The school","The station","The store"], ans:1},
+    {id:14, sentence:"To cut the paper, Tom picked up his sharp scissors while sitting at his desk.",
+     q:"What did Tom want to cut?", opts:["Some cloth","Some paper","Some tape"], ans:1},
+    {id:15, sentence:"At breakfast, Jack poured his cereal into a large bowl while sitting beside his brother.",
+     q:"Who was Jack sitting beside?", opts:["His sister","His brother","His father"], ans:1},
+    {id:16, sentence:"Alice lay down and rested her head on a pillow and slowly closed her eyes.",
+     q:"What did Alice close?", opts:["Her book","Her eyes","Her door"], ans:1},
+    {id:17, sentence:"To check her reflection, Helen looked into the large mirror before leaving for the party.",
+     q:"Why did Helen look?", opts:["To check her makeup","To check her reflection","To see outside"], ans:1},
+    {id:18, sentence:"Before the birthday party, Mother decorated the cake with candles while everyone waited outside together.",
+     q:"Where did everyone wait?", opts:["Inside","Outside","Upstairs"], ans:1},
+    {id:19, sentence:"To bake the cake, Sarah carefully followed a simple recipe while working in the kitchen.",
+     q:"Where was Sarah working?", opts:["In the garden","In the kitchen","In the living room"], ans:1},
+    {id:20, sentence:"The little bird laid its eggs inside a small nest near the old garden wall.",
+     q:"What did the bird lay?", opts:["Feathers","Eggs","Seeds"], ans:1}
+];
+
+/* --- 2 practice items (complement clause pattern, full form, no condition) --- */
+var practiceItems = [
+    {sentence:"The woman realized that the cat on the roof was stuck behind the old chimney.",
+     q:"Where was the cat?", opts:["On the ground","On the roof","In the tree"], ans:1},
+    {sentence:"The student learned that the test in the morning was going to be quite easy.",
+     q:"When was the test?", opts:["In the afternoon","In the morning","In the evening"], ans:1}
+];
+
+/* ================================================================
+   CONSTANTS
+   ================================================================ */
+var FIXATION_MS=800, DEBOUNCE_MS=60, INTER_TRIAL_MS=500, FEEDBACK_MS=1200;
+var OPTION_LETTERS=['A','B','C'];
+
+/* ================================================================
+   STATE
+   ================================================================ */
+var listNumber=0, expTrials=[], allTrials=[], pracTrials=[], allData=[], compResults={};
+var phase='instructions', trialPhase='idle', trialIndex=0, wordIndex=-1;
+var wordTimestamp=0, inputTimestamp=0, inFixation=false, canAdvance=false;
+
+/* ================================================================
+   HELPERS
+   ================================================================ */
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function makeDash(w){var o='';for(var k=0;k<w.length;k++)o+='\u2013';return o;}
+function escapeCSV(s){s=String(s);if(s.indexOf(',')!==-1||s.indexOf('"')!==-1||s.indexOf('\n')!==-1)return '"'+s.replace(/"/g,'""')+'"';return s;}
+
+function adjustFontSize(){
+    var box=document.querySelector('.word-box');
+    if(!box)return;
+    box.style.fontSize='';
+    var sw=box.scrollWidth,cw=box.clientWidth;
+    if(sw<=cw+2)return;
+    var cur=parseFloat(getComputedStyle(box).fontSize);
+    var size=Math.max(Math.floor(cur*(cw/sw))-1,10);
+    box.style.fontSize=size+'px';
+    while(size>10&&box.scrollWidth>box.clientWidth+2){size--;box.style.fontSize=size+'px';}
+}
+
+/* ================================================================
+   SETUP
+   ================================================================ */
+function setup(){
+    listNumber=Math.random()<0.5?1:2;
+
+    /* Experimental trials */
+    expTrials=experimentalItems.map(function(item){
+        var cond=(listNumber===1)
+            ?(item.id<=5?'full':'reduced')
+            :(item.id<=5?'reduced':'full');
+        var sentence=cond==='full'?item.full:item.reduced;
+        var words=sentence.trim().split(/\s+/);
+        var cp=cond==='full'?DISAMBIG_FULL:DISAMBIG_REDUCED;
+        return{
+            itemId:item.id, itemType:'experimental', condition:cond,
+            words:words, critPos:cp, sentence:sentence,
+            q:item.q, opts:item.opts, ans:item.ans
+        };
+    });
+
+    /* Filler trials */
+    var fillerTrials=fillerItems.map(function(item){
+        var words=item.sentence.trim().split(/\s+/);
+        return{
+            itemId:item.id, itemType:'filler', condition:'filler',
+            words:words, critPos:-1, sentence:item.sentence,
+            q:item.q, opts:item.opts, ans:item.ans
+        };
+    });
+
+    allTrials=shuffle(expTrials.concat(fillerTrials));
+
+    /* Practice */
+    pracTrials=practiceItems.map(function(item,idx){
+        var words=item.sentence.trim().split(/\s+/);
+        return{
+            itemId:'P'+(idx+1), itemType:'practice', condition:'practice',
+            words:words, critPos:-1, sentence:item.sentence,
+            q:item.q, opts:item.opts, ans:item.ans
+        };
+    });
+}
+
+/* ================================================================
+   SCREEN
+   ================================================================ */
+function showScreen(id){
+    var s=document.querySelectorAll('.screen');
+    for(var i=0;i<s.length;i++)s[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+}
+
+/* ================================================================
+   TRIAL FLOW
+   ================================================================ */
+function currentTrials(){return phase==='practice'?pracTrials:allTrials;}
+
+function beginTrial(){
+    var trials=currentTrials(),trial=trials[trialIndex];
+    wordIndex=-1;canAdvance=false;inFixation=true;trialPhase='idle';
+
+    var lbl=phase==='practice'?'Practice':'Sentence';
+    document.getElementById('prog-label').textContent=lbl+' '+(trialIndex+1)+' of '+trials.length;
+    document.getElementById('prog-fill').style.width=((trialIndex/trials.length)*100)+'%';
+
+    document.getElementById('trial-area').innerHTML='<div class="fixation">+</div>';
+    document.getElementById('trial-hint').style.visibility='hidden';
+
+    setTimeout(function(){
+        inFixation=false;trialPhase='reading';
+        renderDashes(trial);
+        adjustFontSize();
+        document.getElementById('trial-hint').style.visibility='visible';
+        canAdvance=true;
+    },FIXATION_MS);
+}
+
+function renderDashes(trial){
+    var area=document.getElementById('trial-area');
+    var html='<div class="word-box">';
+    for(var i=0;i<trial.words.length;i++){
+        html+='<span class="w w-dash" id="wd'+i+'">'+makeDash(trial.words[i])+'</span>';
+        if(i<trial.words.length-1)html+=' ';
+    }
+    html+='</div>';
+    area.innerHTML=html;
+}
+
+function revealWord(trial,idx){
+    if(idx>0){var p=document.getElementById('wd'+(idx-1));if(p){p.textContent=makeDash(trial.words[idx-1]);p.className='w w-dash';}}
+    var c=document.getElementById('wd'+idx);if(c){c.textContent=trial.words[idx];c.className='w w-show';}
+}
+
+function advanceWord(){
+    if(trialPhase!=='reading')return;
+    var now=performance.now();
+    if(now-inputTimestamp<DEBOUNCE_MS)return;
+    inputTimestamp=now;
+    if(!canAdvance||inFixation)return;
+
+    var trial=currentTrials()[trialIndex];
+
+    if(wordIndex>=0){
+        var rt=Math.round(now-wordTimestamp);
+        if(phase==='experiment'){
+            allData.push({
+                itemId:trial.itemId, itemType:trial.itemType,
+                list:listNumber, condition:trial.condition,
+                order:trialIndex+1, pos:wordIndex,
+                critPos:trial.critPos,
+                word:trial.words[wordIndex],
+                isCrit:trial.critPos>=0&&wordIndex===trial.critPos,
+                rt:rt, sentence:trial.sentence
+            });
+        }
+    }
+    wordIndex++;
+    if(wordIndex>=trial.words.length){showQuestion(trial);return;}
+    revealWord(trial,wordIndex);
+    wordTimestamp=performance.now();
+}
+
+/* ---- Comprehension ---- */
+function showQuestion(trial){
+    canAdvance=false;trialPhase='question';
+    document.getElementById('trial-hint').style.visibility='hidden';
+    var area=document.getElementById('trial-area');
+    var html='<div class="q-card"><div class="q-label">Comprehension check</div><div class="q-text">'+trial.q+'</div>';
+    for(var i=0;i<trial.opts.length;i++){
+        html+='<button class="opt-btn" data-idx="'+i+'">'+OPTION_LETTERS[i]+'. '+trial.opts[i]+'</button>';
+    }
+    html+='<div class="q-hint">Click an answer or press A, B, C</div></div>';
+    area.innerHTML=html;
+}
+
+function handleAnswer(sel){
+    if(trialPhase!=='question')return;
+    trialPhase='feedback';
+    var trial=currentTrials()[trialIndex];
+    var ok=sel===trial.ans;
+    if(phase==='experiment')compResults[trial.itemId]=ok;
+
+    var btns=document.querySelectorAll('.opt-btn');
+    for(var i=0;i<btns.length;i++){
+        var idx=parseInt(btns[i].getAttribute('data-idx'),10);
+        if(idx===sel&&ok)btns[i].className='opt-btn chosen-correct';
+        else if(idx===sel&&!ok)btns[i].className='opt-btn chosen-wrong';
+        else if(idx===trial.ans&&!ok)btns[i].className='opt-btn reveal-correct';
+        else btns[i].className='opt-btn disabled';
+    }
+    var card=document.querySelector('.q-card');
+    var hint=card.querySelector('.q-hint');if(hint)hint.remove();
+    var msg=document.createElement('div');
+    msg.className='feedback-msg '+(ok?'correct':'incorrect');
+    msg.textContent=ok?'\u2713  Correct!':'\u2717  Incorrect \u2014 the answer was '+OPTION_LETTERS[trial.ans];
+    card.appendChild(msg);
+    setTimeout(finishTrial,FEEDBACK_MS);
+}
+
+function finishTrial(){
+    trialIndex++;
+    var trials=currentTrials();
+    if(trialIndex<trials.length)setTimeout(beginTrial,INTER_TRIAL_MS);
+    else if(phase==='practice'){phase='ready';trialPhase='idle';showScreen('scr-ready');}
+    else{phase='results';trialPhase='idle';renderResults();}
+}
+
+/* ================================================================
+   RESULTS
+   ================================================================ */
+function renderResults(){
+    /* --- Bar chart: full vs reduced at disambiguation point --- */
+    var critFull=[],critRed=[];
+    for(var i=0;i<allData.length;i++){
+        if(!allData[i].isCrit)continue;
+        if(allData[i].condition==='full')critFull.push(allData[i].rt);
+        else if(allData[i].condition==='reduced')critRed.push(allData[i].rt);
+    }
+    var mF=critFull.length?Math.round(critFull.reduce(function(a,b){return a+b;},0)/critFull.length):0;
+    var mR=critRed.length?Math.round(critRed.reduce(function(a,b){return a+b;},0)/critRed.length):0;
+    var mx=Math.max(mF,mR,1);
+
+    var chart=document.getElementById('chart');
+    chart.innerHTML=
+        '<p class="chart-label-text">Average reading time at the key word (ms):</p>'+
+        '<div class="chart-row"><div class="chart-name" style="color:var(--accent)">Full</div>'+
+        '<div class="chart-track"><div class="chart-fill fill-a" id="bar-a" style="width:0%">'+mF+' ms</div></div></div>'+
+        '<div class="chart-row"><div class="chart-name" style="color:var(--secondary)">Reduced</div>'+
+        '<div class="chart-track"><div class="chart-fill fill-b" id="bar-b" style="width:0%">'+mR+' ms</div></div></div>';
+    setTimeout(function(){
+        document.getElementById('bar-a').style.width=Math.max(18,(mF/mx)*88)+'%';
+        document.getElementById('bar-b').style.width=Math.max(18,(mR/mx)*88)+'%';
+    },120);
+
+    /* --- Comprehension accuracy --- */
+    var nOk=0,nTot=0;
+    var ks=Object.keys(compResults);
+    for(var k=0;k<ks.length;k++){nTot++;if(compResults[ks[k]])nOk++;}
+    var pct=nTot>0?Math.round((nOk/nTot)*100):0;
+    document.getElementById('accuracy-line').textContent='Comprehension accuracy: '+nOk+' / '+nTot+' correct ('+pct+'%)';
+    document.getElementById('results-note').textContent='Difference: '+Math.abs(mF-mR)+' ms  |  List '+listNumber;
+
+    /* --- Word-by-word data table --- */
+    var sorted=allData.slice().sort(function(a,b){
+        /* experimental first (ids 1-10), then filler (11-20) */
+        var ta=typeof a.itemId==='number'&&a.itemId<=10?0:1;
+        var tb=typeof b.itemId==='number'&&b.itemId<=10?0:1;
+        if(ta!==tb)return ta-tb;
+        if(a.itemId!==b.itemId)return a.itemId-b.itemId;
+        return a.pos-b.pos;
+    });
+
+    var thtml='<table class="dt"><thead><tr><th>Item</th><th>Condition</th><th class="roi-col">ROI</th><th>Word</th><th class="rt-col">RT&nbsp;(ms)</th></tr></thead><tbody>';
+    var prevId=-1,altGrp=0;
+    for(var j=0;j<sorted.length;j++){
+        var d=sorted[j];
+        if(d.itemId!==prevId){altGrp=1-altGrp;prevId=d.itemId;}
+        /* ROI label */
+        var roiStr;
+        if(d.critPos<0){
+            roiStr='\u2014';
+        } else {
+            var r=d.pos-d.critPos;
+            roiStr=r===0?'CW':(r>0?'+'+r:String(r));
+        }
+        var cls='';
+        if(d.isCrit)cls+=' cw-row';
+        if(altGrp)cls+=' item-alt';
+        var condCell=d.condition==='filler'?'<td class="filler-cond">filler</td>':'<td>'+d.condition+'</td>';
+
+        thtml+='<tr class="'+cls.trim()+'">';
+        thtml+='<td>'+d.itemId+'</td>';
+        thtml+=condCell;
+        thtml+='<td class="roi-col">'+roiStr+'</td>';
+        thtml+='<td>'+d.word+'</td>';
+        thtml+='<td class="rt-col">'+d.rt+'</td>';
+        thtml+='</tr>';
+    }
+    thtml+='</tbody></table>';
+    document.getElementById('table-wrap').innerHTML=thtml;
+
+    showScreen('scr-results');
+}
+
+/* ================================================================
+   CSV DOWNLOAD
+   ================================================================ */
+function downloadCSV(){
+    var headers=['item_id','item_type','list','condition','presentation_order','word_position','roi','word','is_critical','rt_ms','comp_correct','sentence'];
+    var lines=[headers.join(',')];
+    for(var i=0;i<allData.length;i++){
+        var d=allData[i];
+        var roiVal=d.critPos<0?'':(d.pos-d.critPos);
+        var cc=compResults[d.itemId];
+        lines.push([
+            d.itemId, d.itemType, d.list, d.condition, d.order,
+            d.pos+1,
+            roiVal,
+            escapeCSV(d.word),
+            d.isCrit?'TRUE':'FALSE',
+            d.rt,
+            cc===true?'TRUE':(cc===false?'FALSE':''),
+            escapeCSV(d.sentence)
+        ].join(','));
+    }
+    var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download='reading_experiment_data.csv';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+/* ================================================================
+   EVENT HANDLERS
+   ================================================================ */
+document.addEventListener('keydown',function(e){
+    if(e.code==='Space'||e.key===' '){e.preventDefault();if(phase==='practice'||phase==='experiment')advanceWord();}
+    if(trialPhase==='question'){var km={1:0,2:1,3:2,a:0,b:1,c:2};var idx=km[e.key.toLowerCase()];if(idx!==undefined)handleAnswer(idx);}
+});
+
+(function(){
+    document.getElementById('trial-area').addEventListener('click',function(e){
+        var btn=e.target.closest('.opt-btn');
+        if(btn&&trialPhase==='question')handleAnswer(parseInt(btn.getAttribute('data-idx'),10));
+    });
+})();
+
+(function(){
+    var ts=document.getElementById('scr-trial');
+    function tap(e){
+        if(e.target.closest('button')||e.target.closest('.opt-btn'))return;
+        if((phase==='practice'||phase==='experiment')&&trialPhase==='reading'){e.preventDefault();advanceWord();}
+    }
+    ts.addEventListener('click',tap);
+    ts.addEventListener('touchstart',tap,{passive:false});
+})();
+
+document.getElementById('btn-start-practice').addEventListener('click',function(){phase='practice';trialIndex=0;showScreen('scr-trial');beginTrial();});
+document.getElementById('btn-start-exp').addEventListener('click',function(){phase='experiment';trialIndex=0;showScreen('scr-trial');beginTrial();});
+document.getElementById('btn-download').addEventListener('click',downloadCSV);
+
+/* ================================================================
+   INIT
+   ================================================================ */
+setup();
+</script>
+</body>
+</html>
